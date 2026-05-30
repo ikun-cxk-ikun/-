@@ -1,0 +1,1528 @@
+{% extends "base.html" %}
+
+{% block title %}🧠 AI技术思维分析器{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 顶部状态栏 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="status-banner">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div id="status-indicator" class="status-dot status-waiting me-3"></div>
+                        <div>
+                            <h6 class="mb-0 status-title" id="status-text">AI处理器未初始化</h6>
+                            <small class="text-muted" id="processor-stats">等待配置启动...</small>
+                        </div>
+                    </div>
+                    <div class="status-metrics d-flex gap-4">
+                        <div class="metric-item text-center">
+                            <div id="processed-count" class="metric-number">0</div>
+                            <small class="metric-label">已处理</small>
+                        </div>
+                        <div class="metric-item text-center">
+                            <div id="queue-size" class="metric-number">0</div>
+                            <small class="metric-label">队列中</small>
+                        </div>
+                        <div class="metric-item text-center">
+                            <div id="context-size" class="metric-number">0</div>
+                            <small class="metric-label">上下文</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- 左侧：控制面板 -->
+        <div class="col-lg-4 col-xl-3">
+            <div class="control-panel">
+                <!-- 语音识别区域 -->
+                <div class="voice-panel mb-4">
+                    <div class="voice-header">
+                        <i class="fas fa-microphone-alt me-2"></i>语音识别
+                    </div>
+                    <div class="voice-body text-center">
+                        <button id="voice-btn" class="voice-button" disabled>
+                            <div class="voice-main-icon mb-3">
+                                <i class="fas fa-microphone-alt" style="font-size: 3rem; color: #6b7280;"></i>
+                            </div>
+                            <div class="voice-icon">
+                                <i class="fas fa-microphone-slash"></i>
+                            </div>
+                            <div class="voice-text mt-2">
+                                <span id="voice-text">点击开始语音</span>
+                            </div>
+                        </button>
+                        <div class="voice-status mt-3">
+                            <small id="voice-status" class="text-muted">正在初始化...</small>
+                        </div>
+                        <div class="voice-level mt-2">
+                            <div class="progress voice-progress">
+                                <div id="voice-level" class="progress-bar voice-bar"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快捷操作 -->
+                <div class="actions-panel">
+                    <div class="actions-header">
+                        <i class="fas fa-tools me-2"></i>快捷操作
+                    </div>
+                    <div class="actions-body">
+                        <button id="clear-text" class="btn btn-outline-warning w-100 mb-2">
+                            <i class="fas fa-trash-alt me-2"></i>清空内容
+                        </button>
+                        <button id="reset-processor" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-redo me-2"></i>重置系统
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间：输入区域 -->
+        <div class="col-lg-4 col-xl-5">
+            <div class="input-panel">
+                <div class="input-header">
+                    <i class="fas fa-edit me-2"></i>技术问题输入
+                    <div class="ms-auto">
+                        <span id="timestamp" class="timestamp">--:--:--</span>
+                    </div>
+                </div>
+                <div class="input-body">
+                    <textarea id="text-input" class="form-control modern-textarea" rows="12" 
+                              placeholder="💡 请输入您的技术问题，例如：
+
+🔹 什么是分布式系统的CAP理论？
+🔹 如何优化MySQL的查询性能？
+🔹 解释一下React的虚拟DOM机制？
+🔹 Python装饰器的实现原理是什么？
+
+您可以使用语音输入或逐字输入，AI会实时分析您的技术思路..." disabled></textarea>
+                    
+                    <div class="input-actions mt-3">
+                        <div class="d-flex gap-2">
+                            <button id="send-text" class="btn btn-primary btn-analyze flex-fill" disabled>
+                                <i class="fas fa-brain me-2"></i>开始AI分析
+                            </button>
+                            <button id="start-deep-thinking" class="btn btn-success btn-deep-thinking" disabled>
+                                <i class="fas fa-search-plus me-2"></i>深度思考
+                            </button>
+                            <button id="stop-deep-thinking" class="btn btn-danger btn-stop-deep d-none" disabled>
+                                <i class="fas fa-stop me-2"></i>停止
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="input-hints mt-3">
+                        <div class="hint-item">
+                            <kbd>Ctrl</kbd> + <kbd>Enter</kbd> 发送分析
+                        </div>
+                        <div class="hint-item">
+                            <kbd>Ctrl</kbd> + <kbd>Space</kbd> 语音识别
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：分析结果 -->
+        <div class="col-lg-4 col-xl-4">
+            <div class="analysis-panel">
+                <div class="analysis-header">
+                    <i class="fas fa-brain me-2"></i>AI思维分析
+                    <div class="ms-auto">
+                        <div class="analysis-status">
+                            <div class="spinner-border spinner-border-sm d-none" id="analysis-spinner"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="analysis-body">
+                    <!-- 当前输入显示 -->
+                    <div class="analysis-section">
+                        <div class="section-label">
+                            <i class="fas fa-keyboard text-primary me-2"></i>当前输入
+                        </div>
+                        <div id="current-input" class="section-content current-input-display">
+                            <em class="empty-state">等待输入...</em>
+                        </div>
+                    </div>
+
+                    <!-- 实时更新 -->
+                    <div class="analysis-section">
+                        <div class="section-label">
+                            <i class="fas fa-sync-alt text-success me-2"></i>实时分析
+                        </div>
+                        <div id="realtime-updates" class="section-content realtime-updates">
+                            <em class="empty-state">暂无更新...</em>
+                        </div>
+                    </div>
+
+                    <!-- 技术关键词 -->
+                    <div class="analysis-section">
+                        <div class="section-label">
+                            <i class="fas fa-tags text-info me-2"></i>关键技术
+                        </div>
+                        <div id="keywords-display" class="section-content keywords-display">
+                            <em class="empty-state">等待识别...</em>
+                        </div>
+                    </div>
+
+                    <!-- 技术概念 -->
+                    <div class="analysis-section">
+                        <div class="section-label">
+                            <i class="fas fa-lightbulb text-warning me-2"></i>核心概念
+                        </div>
+                        <div id="concepts-display" class="section-content concepts-display">
+                            <em class="empty-state">等待分析...</em>
+                        </div>
+                    </div>
+
+                    <!-- 思考摘要 -->
+                    <div class="analysis-section">
+                        <div class="section-label">
+                            <i class="fas fa-quote-left text-danger me-2"></i>AI思考摘要
+                        </div>
+                        <div id="summary-display" class="section-content summary-display">
+                            <em class="empty-state">等待AI生成...</em>
+                        </div>
+                    </div>
+
+                    <!-- 后续预测 -->
+                    <div class="analysis-section">
+                        <div class="section-label">
+                            <i class="fas fa-crystal-ball text-purple me-2"></i>可能的后续问题
+                        </div>
+                        <div id="prediction-display" class="section-content prediction-display">
+                            <em class="empty-state">等待预测...</em>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 深度思考结果面板 -->
+            <div id="deep-answer-panel" class="deep-answer-panel mt-4" style="display: none;">
+                <div class="deep-answer-header">
+                    <i class="fas fa-brain me-2"></i>深度思考结果
+                    <div class="ms-auto d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm d-none me-2" id="deep-thinking-spinner"></div>
+                        <span id="deep-status-text" class="deep-status">等待开始...</span>
+                    </div>
+                </div>
+                <div class="deep-answer-body">
+                    <div id="deep-answer-content" class="deep-answer-content">
+                        <em class="empty-state">点击"深度思考"开始分析...</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary-color: #4f46e5;
+    --primary-light: #818cf8;
+    --primary-dark: #3730a3;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #06b6d4;
+    --purple-color: #8b5cf6;
+    
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --bg-accent: #f1f5f9;
+    
+    --border-color: #e2e8f0;
+    --border-radius: 12px;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.container-fluid {
+    padding: 20px;
+}
+
+/* 状态栏 */
+.status-banner {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-waiting { background: #94a3b8; }
+.status-processing { background: var(--warning-color); }
+.status-completed { background: var(--success-color); }
+.status-error { background: var(--danger-color); }
+
+.status-title {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.metric-item {
+    min-width: 60px;
+}
+
+.metric-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.metric-label {
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+/* 控制面板 */
+.control-panel {
+    height: fit-content;
+}
+
+.config-card, .voice-panel, .actions-panel {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.config-header, .voice-header, .actions-header {
+    background: var(--bg-accent);
+    padding: 15px 20px;
+    font-weight: 600;
+    color: #1e293b;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.config-body, .voice-body, .actions-body {
+    padding: 20px;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.form-control, .form-select {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 12px;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.btn-init {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-init:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* 语音按钮 */
+.voice-button {
+    background: var(--bg-accent);
+    border: 2px dashed var(--border-color);
+    border-radius: 16px;
+    padding: 30px;
+    width: 100%;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.voice-button:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    background: rgba(79, 70, 229, 0.05);
+}
+
+.voice-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.voice-button.active {
+    background: linear-gradient(135deg, var(--danger-color) 0%, #fca5a5 100%);
+    border-color: var(--danger-color);
+    color: white;
+}
+
+.voice-button.active .voice-main-icon i {
+    color: white !important;
+    animation: pulse-microphone 1.5s infinite;
+}
+
+.voice-main-icon {
+    transition: all 0.3s ease;
+}
+
+.voice-button:hover:not(:disabled) .voice-main-icon i {
+    color: var(--primary-color) !important;
+    transform: scale(1.1);
+}
+
+.voice-icon {
+    font-size: 2rem;
+}
+
+@keyframes pulse-microphone {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+.voice-progress {
+    height: 4px;
+    border-radius: 2px;
+    background: var(--bg-accent);
+}
+
+.voice-bar {
+    background: linear-gradient(90deg, var(--success-color) 0%, var(--info-color) 100%);
+    transition: width 0.3s ease;
+}
+
+/* 输入面板 */
+.input-panel {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+    height: fit-content;
+}
+
+.input-header {
+    background: var(--bg-accent);
+    padding: 15px 20px;
+    font-weight: 600;
+    color: #1e293b;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+}
+
+.input-body {
+    padding: 20px;
+}
+
+.modern-textarea {
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    resize: vertical;
+    transition: all 0.2s ease;
+}
+
+.modern-textarea:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+}
+
+.btn-analyze {
+    background: linear-gradient(135deg, var(--success-color) 0%, #34d399 100%);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-analyze:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+}
+
+.btn-deep-thinking {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    color: white;
+}
+
+.btn-deep-thinking:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.btn-stop-deep {
+    background: linear-gradient(135deg, var(--danger-color) 0%, #f87171 100%);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    color: white;
+}
+
+.btn-stop-deep:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+    color: white;
+}
+
+.input-hints {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.hint-item {
+    font-size: 0.75rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+kbd {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    color: #475569;
+}
+
+.timestamp {
+    font-family: 'Courier New', monospace;
+    background: var(--bg-accent);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+/* 分析面板 */
+.analysis-panel {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+    height: fit-content;
+}
+
+.analysis-header {
+    background: var(--bg-accent);
+    padding: 15px 20px;
+    font-weight: 600;
+    color: #1e293b;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+}
+
+.analysis-body {
+    padding: 20px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.analysis-section {
+    margin-bottom: 20px;
+}
+
+.section-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+}
+
+.section-content {
+    background: var(--bg-accent);
+    border-radius: 8px;
+    padding: 12px;
+    min-height: 40px;
+    border: 1px solid var(--border-color);
+}
+
+.empty-state {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.current-input-display {
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    max-height: 80px;
+    overflow-y: auto;
+    word-break: break-word;
+}
+
+.realtime-updates {
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.realtime-update {
+    padding: 4px 0;
+    color: var(--success-color);
+    font-size: 0.85rem;
+    border-bottom: 1px solid #ecfdf5;
+}
+
+.realtime-update:last-child {
+    border-bottom: none;
+}
+
+.keyword-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--info-color) 0%, #67e8f9 100%);
+    color: white;
+    padding: 4px 10px;
+    margin: 2px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.concept-item {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    color: #374151;
+}
+
+.concept-item:last-child {
+    border-bottom: none;
+}
+
+.concept-item:before {
+    content: "💡 ";
+    margin-right: 6px;
+}
+
+.summary-display {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #374151;
+}
+
+.prediction-display {
+    font-size: 0.9rem;
+    color: #6b7280;
+    font-style: italic;
+}
+
+/* 动画效果 */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.analysis-section {
+    animation: fadeInUp 0.3s ease;
+}
+
+/* 响应式设计 */
+@media (max-width: 992px) {
+    .container-fluid {
+        padding: 15px;
+    }
+    
+    .status-metrics {
+        display: none;
+    }
+    
+    .input-hints {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .modern-textarea {
+        min-height: 200px;
+    }
+    
+    .analysis-body {
+        max-height: 60vh;
+    }
+    
+    .voice-button {
+        padding: 20px;
+    }
+    
+    .voice-icon {
+        font-size: 1.5rem;
+    }
+}
+
+/* 自定义滚动条 */
+.analysis-body::-webkit-scrollbar,
+.realtime-updates::-webkit-scrollbar,
+.current-input-display::-webkit-scrollbar {
+    width: 6px;
+}
+
+.analysis-body::-webkit-scrollbar-track,
+.realtime-updates::-webkit-scrollbar-track,
+.current-input-display::-webkit-scrollbar-track {
+    background: var(--bg-accent);
+    border-radius: 3px;
+}
+
+.analysis-body::-webkit-scrollbar-thumb,
+.realtime-updates::-webkit-scrollbar-thumb,
+.current-input-display::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.analysis-body::-webkit-scrollbar-thumb:hover,
+.realtime-updates::-webkit-scrollbar-thumb:hover,
+.current-input-display::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* 加载动画 */
+.loading-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f4f6;
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 紫色主题色 */
+.text-purple { color: var(--purple-color); }
+
+/* 深度思考面板样式 */
+.deep-answer-panel {
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.deep-answer-header {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+    padding: 15px 20px;
+    font-weight: 600;
+    color: white;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.deep-status {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.deep-answer-body {
+    padding: 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.deep-answer-content {
+    min-height: 100px;
+    line-height: 1.7;
+    color: #374151;
+}
+
+.deep-answer-content h2 {
+    color: var(--primary-color);
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 20px 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.deep-answer-content h3 {
+    color: #6366f1;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 16px 0 10px 0;
+}
+
+.deep-answer-content h4 {
+    color: #6b7280;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 12px 0 8px 0;
+}
+
+.deep-answer-content ul {
+    margin: 12px 0;
+    padding-left: 20px;
+}
+
+.deep-answer-content li {
+    margin: 8px 0;
+    color: #4b5563;
+}
+
+.deep-answer-content pre {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    overflow-x: auto;
+}
+
+.deep-answer-content code {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    color: #d946ef;
+}
+
+.deep-answer-content pre code {
+    background: none;
+    padding: 0;
+    color: #374151;
+}
+
+.deep-answer-content strong {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.deep-answer-content p {
+    margin: 12px 0;
+}
+
+/* 打字动画效果 */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 10px 0;
+}
+
+.typing-indicator span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    animation: typing-dots 1.4s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typing-dots {
+    0%, 80%, 100% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* 流式输出动画 */
+.stream-content {
+    animation: fadeInUp 0.3s ease;
+}
+
+/* 深度思考面板滚动条 */
+.deep-answer-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.deep-answer-body::-webkit-scrollbar-track {
+    background: var(--bg-accent);
+    border-radius: 4px;
+}
+
+.deep-answer-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.deep-answer-body::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let processorInitialized = false;
+    let realtimeInterval;
+    let recognition;
+    let isListening = false;
+    let speechSupported = false;
+
+    // 检查浏览器语音识别支持
+    function initSpeechRecognition() {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            speechSupported = true;
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'zh-CN';
+            recognition.maxAlternatives = 1;
+            
+            recognition.onstart = function() {
+                isListening = true;
+                $('#voice-btn').addClass('active');
+                $('#voice-btn i').removeClass('fa-microphone-slash').addClass('fa-microphone');
+                $('#voice-text').text('正在录音...');
+                $('#voice-status').text('请开始说话').removeClass('text-muted').addClass('text-success');
+                $('#analysis-spinner').removeClass('d-none');
+            };
+            
+            recognition.onresult = function(event) {
+                let finalTranscript = '';
+                let interimTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                const currentText = $('#text-input').val();
+                if (finalTranscript) {
+                    const newText = currentText + finalTranscript;
+                    $('#text-input').val(newText);
+                    // 如果处理器已初始化，进行实时分析
+                    if (processorInitialized) {
+                        processRealtimeText(newText);
+                    }
+                    // 启用输入框和按钮（如果之前被禁用）
+                    $('#text-input, #send-text').prop('disabled', false);
+                }
+                
+                if (interimTranscript) {
+                    $('#voice-status').text('识别中: ' + interimTranscript).removeClass('text-muted text-success').addClass('text-primary');
+                }
+                
+                const confidence = event.results[event.results.length - 1][0].confidence || 0.5;
+                $('#voice-level').css('width', (confidence * 100) + '%');
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('语音识别错误:', event.error);
+                stopVoiceRecognition();
+                let errorMsg = '语音识别错误';
+                switch(event.error) {
+                    case 'no-speech': errorMsg = '未检测到语音'; break;
+                    case 'audio-capture': errorMsg = '无法访问麦克风'; break;
+                    case 'not-allowed': errorMsg = '麦克风权限被拒绝'; break;
+                    case 'network': errorMsg = '网络连接错误'; break;
+                }
+                $('#voice-status').text(errorMsg).removeClass('text-success text-primary').addClass('text-danger');
+                showAlert('error', errorMsg);
+            };
+            
+            recognition.onend = function() {
+                stopVoiceRecognition();
+            };
+            
+            $('#voice-status').text('语音识别已就绪，点击开始').removeClass('text-muted').addClass('text-info');
+            $('#voice-btn').prop('disabled', false); // 浏览器支持时自动启用
+        } else {
+            $('#voice-status').text('浏览器不支持语音识别').addClass('text-danger');
+            $('#voice-btn').prop('disabled', true);
+        }
+    }
+
+    $('#voice-btn').click(function() {
+        if (!speechSupported) {
+            showAlert('error', '浏览器不支持语音识别功能');
+            return;
+        }
+        
+        // 移除对processorInitialized的强制检查，允许直接使用语音输入
+        if (isListening) {
+            stopVoiceRecognition();
+        } else {
+            startVoiceRecognition();
+        }
+    });
+
+    function startVoiceRecognition() {
+        try {
+            recognition.start();
+        } catch (error) {
+            console.error('启动语音识别失败:', error);
+            showAlert('error', '启动语音识别失败');
+        }
+    }
+
+    function stopVoiceRecognition() {
+        if (recognition && isListening) {
+            try {
+                recognition.stop();
+            } catch (error) {
+                console.error('停止语音识别失败:', error);
+            }
+        }
+        
+        isListening = false;
+        $('#voice-btn').removeClass('active');
+        $('#voice-btn i').removeClass('fa-microphone').addClass('fa-microphone-slash');
+        $('#voice-text').text('点击开始语音');
+        $('#voice-status').text('语音识别已停止').removeClass('text-success text-primary').addClass('text-muted');
+        $('#voice-level').css('width', '0%');
+        $('#analysis-spinner').addClass('d-none');
+    }
+
+    function processRealtimeText(text) {
+        $.ajax({
+            url: '/api/process_text',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ text: text }),
+            success: function(response) {
+                if (response.success) {
+                    updateThoughtDisplay(response.thought);
+                }
+            },
+            error: function() {
+                console.error('实时文本处理失败');
+            }
+        });
+    }
+
+    initSpeechRecognition();
+
+    $('#send-text').click(function() {
+        const text = $('#text-input').val().trim();
+        if (!text) {
+            showAlert('error', '请输入要分析的技术问题！');
+            return;
+        }
+
+        const $btn = $(this);
+        $btn.prop('disabled', true).html('<div class="loading-spinner me-2"></div>AI分析中...');
+        $('#analysis-spinner').removeClass('d-none');
+
+        $.ajax({
+            url: '/api/process_text',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ text: text }),
+            success: function(response) {
+                if (response.success) {
+                    updateThoughtDisplay(response.thought);
+                    $('#text-input').val('');
+                    showAlert('success', '✅ AI分析完成！');
+                } else {
+                    showAlert('error', '分析失败: ' + response.error);
+                }
+            },
+            error: function() {
+                showAlert('error', '网络错误，请重试');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="fas fa-brain me-2"></i>开始AI分析');
+                $('#analysis-spinner').addClass('d-none');
+            }
+        });
+    });
+
+    $('#text-input').on('input', function() {
+        const text = $(this).val();
+        if (processorInitialized && text.trim()) {
+            $.ajax({
+                url: '/api/process_text',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ text: text }),
+                success: function(response) {
+                    if (response.success) {
+                        updateThoughtDisplay(response.thought);
+                    }
+                }
+            });
+        }
+    });
+
+    $('#clear-text').click(function() {
+        $('#text-input').val('');
+        $('#current-input').html('<em class="empty-state">等待输入...</em>');
+        if (isListening) {
+            stopVoiceRecognition();
+        }
+        resetAnalysisDisplay();
+    });
+
+    $('#reset-processor').click(function() {
+        if (!processorInitialized) return;
+
+        const $btn = $(this);
+        $btn.prop('disabled', true);
+
+        if (isListening) {
+            stopVoiceRecognition();
+        }
+
+        $.ajax({
+            url: '/api/reset_processor',
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    resetDisplay();
+                    showAlert('success', '🔄 系统重置完成！');
+                } else {
+                    showAlert('error', '重置失败: ' + response.error);
+                }
+            },
+            error: function() {
+                showAlert('error', '网络错误，请重试');
+            },
+            complete: function() {
+                $btn.prop('disabled', false);
+            }
+        });
+    });
+
+    function startRealtimeUpdates() {
+        if (realtimeInterval) clearInterval(realtimeInterval);
+        
+        realtimeInterval = setInterval(function() {
+            if (!processorInitialized) return;
+
+            $.ajax({
+                url: '/api/get_realtime_thoughts',
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        updateThoughtDisplay(response.thoughts);
+                    }
+                }
+            });
+
+            $.ajax({
+                url: '/api/get_processor_status',
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        updateStatusDisplay(response.status);
+                    }
+                }
+            });
+        }, 2000);
+    }
+
+    function updateThoughtDisplay(thought) {
+        if (thought.timestamp) {
+            $('#timestamp').text(thought.timestamp);
+        }
+
+        if (thought.current_input) {
+            $('#current-input').html(thought.current_input || '<em class="empty-state">等待输入...</em>');
+        }
+
+        if (thought.realtime_updates && thought.realtime_updates.length > 0) {
+            const updatesHtml = thought.realtime_updates.map(update => 
+                `<div class="realtime-update">🔍 ${update}</div>`
+            ).join('');
+            $('#realtime-updates').html(updatesHtml);
+        }
+
+        if (thought.keywords && thought.keywords.length > 0) {
+            const keywordsHtml = thought.keywords.map(keyword => 
+                `<span class="keyword-tag">${keyword}</span>`
+            ).join('');
+            $('#keywords-display').html(keywordsHtml);
+        }
+
+        if (thought.concepts && thought.concepts.length > 0) {
+            const conceptsHtml = thought.concepts.map(concept => 
+                `<div class="concept-item">${concept}</div>`
+            ).join('');
+            $('#concepts-display').html(conceptsHtml);
+        }
+
+        if (thought.summary && thought.summary !== "正在分析中...") {
+            $('#summary-display').html(thought.summary);
+        }
+
+        if (thought.prediction) {
+            $('#prediction-display').html(`🔮 ${thought.prediction}`);
+        }
+
+        const statusClass = getStatusClass(thought.status);
+        $('#status-indicator').removeClass().addClass('status-dot ' + statusClass);
+        
+        const statusText = getStatusText(thought.status);
+        $('#status-text').text(statusText);
+    }
+
+    function updateStatusDisplay(status) {
+        $('#processed-count').text(status.processed_count || 0);
+        $('#queue-size').text(status.queue_size || 0);
+        $('#context-size').text(status.context_items || 0);
+    }
+
+    function resetDisplay() {
+        resetAnalysisDisplay();
+        $('#processed-count, #queue-size, #context-size').text('0');
+        $('#timestamp').text('--:--:--');
+    }
+
+    function resetAnalysisDisplay() {
+        $('#current-input').html('<em class="empty-state">等待输入...</em>');
+        $('#realtime-updates').html('<em class="empty-state">暂无更新...</em>');
+        $('#keywords-display').html('<em class="empty-state">等待识别...</em>');
+        $('#concepts-display').html('<em class="empty-state">等待分析...</em>');
+        $('#summary-display').html('<em class="empty-state">等待AI生成...</em>');
+        $('#prediction-display').html('<em class="empty-state">等待预测...</em>');
+    }
+
+    function getStatusClass(status) {
+        const statusMap = {
+            'waiting': 'status-waiting',
+            'processing': 'status-processing', 
+            'completed': 'status-completed',
+            'error': 'status-error'
+        };
+        return statusMap[status] || 'status-waiting';
+    }
+
+    function getStatusText(status) {
+        const textMap = {
+            'waiting': '⏳ 等待输入',
+            'processing': '🤖 AI正在思考',
+            'completed': '✅ 分析完成',
+            'error': '❌ 处理错误'
+        };
+        return textMap[status] || '❓ 未知状态';
+    }
+
+    function showAlert(type, message) {
+        const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+        const icon = type === 'error' ? '❌' : '✅';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;" role="alert">
+                ${icon} ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        
+        $('body').append(alertHtml);
+        
+        setTimeout(() => {
+            $('.alert').alert('close');
+        }, 4000);
+    }
+
+    function checkProcessorStatus() {
+        $.ajax({
+            url: '/api/get_processor_status',
+            method: 'GET',
+            success: function(response) {
+                if (response.success && response.status.status === 'active') {
+                    processorInitialized = true;
+                    $('#status-indicator').removeClass().addClass('status-dot status-completed');
+                    $('#status-text').text('AI处理器已就绪');
+                    $('#processor-stats').text('系统运行正常，Ready for AI!');
+                    $('#text-input, #send-text, #start-deep-thinking').prop('disabled', false);
+                    // 语音按钮在浏览器支持时已经启用，这里不需要再启用
+                    
+                    if (speechSupported) {
+                        $('#voice-status').text('🎤 语音识别就绪，点击开始').removeClass('text-muted').addClass('text-info');
+                    }
+                    
+                    startRealtimeUpdates();
+                    updateStatusDisplay(response.status);
+                } else {
+                    // 如果处理器未初始化，自动初始化
+                    $.ajax({
+                        url: '/api/init_processor',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({}),
+                        success: function(initResponse) {
+                            if (initResponse.success) {
+                                processorInitialized = true;
+                                $('#status-indicator').removeClass().addClass('status-dot status-completed');
+                                $('#status-text').text('AI处理器已就绪');
+                                $('#processor-stats').text('系统运行正常，Ready for AI!');
+                                $('#text-input, #send-text, #start-deep-thinking').prop('disabled', false);
+                                
+                                if (speechSupported) {
+                                    $('#voice-status').text('🎤 语音识别就绪，点击开始').removeClass('text-muted').addClass('text-info');
+                                }
+                                
+                                startRealtimeUpdates();
+                                checkProcessorStatus(); // 再次检查状态以更新显示
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    $(document).keydown(function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.keyCode === 13) {
+            $('#send-text').click();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.keyCode === 32) {
+            e.preventDefault();
+            $('#voice-btn').click();
+        }
+    });
+
+    // 深度思考相关变量
+    let deepThinkingActive = false;
+    let deepStreamInterval;
+    let lastDeepContent = '';
+
+    // 深度思考功能
+    $('#start-deep-thinking').click(function() {
+        const currentInput = $('#text-input').val().trim();
+        
+        if (!currentInput) {
+            showAlert('error', '请先输入要进行深度思考的问题！');
+            return;
+        }
+
+        startDeepThinking(currentInput);
+    });
+
+    $('#stop-deep-thinking').click(function() {
+        stopDeepThinking();
+    });
+
+    function startDeepThinking(question) {
+        if (deepThinkingActive) {
+            showAlert('warning', '深度思考正在进行中...');
+            return;
+        }
+
+        $.ajax({
+            url: '/api/start_deep_thinking',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ question: question }),
+            success: function(response) {
+                if (response.success) {
+                    deepThinkingActive = true;
+                    $('#deep-answer-panel').slideDown();
+                    $('#start-deep-thinking').addClass('d-none');
+                    $('#stop-deep-thinking').removeClass('d-none');
+                    $('#deep-thinking-spinner').removeClass('d-none');
+                    $('#deep-status-text').text('🔍 联网搜索中...');
+                    
+                    // 显示打字动画
+                    $('#deep-answer-content').html('<div class="typing-indicator"><span></span><span></span><span></span></div><p>正在联网搜索最新信息...</p>');
+                    
+                    // 开始轮询流式内容
+                    startDeepStreamPolling();
+                    
+                    showAlert('success', '🧠 深度思考已启动，包含联网搜索...');
+                } else {
+                    showAlert('error', response.error || '启动深度思考失败');
+                }
+            },
+            error: function() {
+                showAlert('error', '网络错误，无法启动深度思考');
+            }
+        });
+    }
+
+    function startDeepStreamPolling() {
+        if (deepStreamInterval) clearInterval(deepStreamInterval);
+        
+        deepStreamInterval = setInterval(function() {
+            if (!deepThinkingActive) return;
+
+            $.ajax({
+                url: '/api/get_deep_answer_stream',
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const streamData = response.stream;
+                        
+                        if (streamData.content && streamData.content !== lastDeepContent) {
+                            updateDeepContent(streamData.content);
+                            lastDeepContent = streamData.content;
+                        }
+
+                        // 更新状态
+                        if (streamData.status) {
+                            $('#deep-status-text').text(streamData.status);
+                        }
+
+                        if (streamData.finished && deepThinkingActive) {
+                            // 深度思考完成
+                            finishDeepThinking();
+                        }
+                    }
+                },
+                error: function() {
+                    console.error('获取深度思考流失败');
+                }
+            });
+        }, 500); // 每500ms检查一次
+    }
+
+    function updateDeepContent(content) {
+        // 移除打字动画
+        $('#deep-answer-content .typing-indicator').remove();
+        
+        // 处理markdown格式
+        const formattedContent = formatMarkdown(content);
+        $('#deep-answer-content').html(formattedContent);
+        
+        // 滚动到底部
+        const container = $('.deep-answer-body');
+        container.scrollTop(container[0].scrollHeight);
+    }
+
+    function formatMarkdown(text) {
+        // 简单的markdown格式处理
+        let formatted = text
+            // 标题
+            .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+            .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+            .replace(/^#### (.*$)/gim, '<h4>$1</h4>')
+            // 粗体
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            // 代码块
+            .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+            // 行内代码
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            // 列表项
+            .replace(/^- (.*$)/gim, '<li>$1</li>')
+            .replace(/^(\d+)\. (.*$)/gim, '<li>$2</li>')
+            // 换行处理
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\n/g, '<br>');
+        
+        // 包装列表
+        formatted = formatted.replace(/(<li>.*?<\/li>(?:\s*<li>.*?<\/li>)*)/gs, '<ul>$1</ul>');
+        
+        // 包装段落
+        if (!formatted.startsWith('<h') && !formatted.startsWith('<ul') && !formatted.startsWith('<pre')) {
+            formatted = '<p>' + formatted + '</p>';
+        }
+        
+        return formatted;
+    }
+
+    function finishDeepThinking() {
+        deepThinkingActive = false;
+        clearInterval(deepStreamInterval);
+        
+        $('#deep-thinking-spinner').addClass('d-none');
+        $('#deep-status-text').text('✅ 深度分析完成');
+        $('#start-deep-thinking').removeClass('d-none');
+        $('#stop-deep-thinking').addClass('d-none');
+        
+        showAlert('success', '🎉 深度思考分析完成！');
+    }
+
+    function stopDeepThinking() {
+        $.ajax({
+            url: '/api/stop_deep_thinking',
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    deepThinkingActive = false;
+                    clearInterval(deepStreamInterval);
+                    
+                    $('#deep-thinking-spinner').addClass('d-none');
+                    $('#deep-status-text').text('🛑 深度分析已停止');
+                    $('#start-deep-thinking').removeClass('d-none');
+                    $('#stop-deep-thinking').addClass('d-none');
+                    
+                    showAlert('info', '深度思考已停止');
+                }
+            }
+        });
+    }
+
+    // 页面加载检查
+    checkProcessorStatus();
+
+    // 添加时间更新
+    setInterval(function() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('zh-CN', { hour12: false });
+        if ($('#timestamp').text() === '--:--:--') {
+            $('#timestamp').text(timeString);
+        }
+    }, 1000);
+});
+</script>
+{% endblock %}

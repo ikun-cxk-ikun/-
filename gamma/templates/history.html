@@ -1,0 +1,685 @@
+{% extends "base.html" %}
+
+{% block title %}处理历史 - 技术思维处理器{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 搜索和过滤器 -->
+    <div class="col-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="fa fa-search"></i> 搜索和过滤
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="search-input" class="form-label">搜索关键词</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="search-input" placeholder="搜索问题或摘要...">
+                            <button class="btn btn-outline-secondary" type="button" id="search-btn">
+                                <i class="fa fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label for="status-filter" class="form-label">处理状态</label>
+                        <select class="form-select" id="status-filter">
+                            <option value="">全部状态</option>
+                            <option value="processed">已处理</option>
+                            <option value="rejected">已拒绝</option>
+                            <option value="non_technical">非技术</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label for="date-filter" class="form-label">日期范围</label>
+                        <select class="form-select" id="date-filter">
+                            <option value="">全部时间</option>
+                            <option value="today">今天</option>
+                            <option value="week">最近7天</option>
+                            <option value="month">最近30天</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2 mb-3 d-flex align-items-end">
+                        <button class="btn btn-outline-danger w-100" id="clear-history">
+                            <i class="fa fa-trash"></i> 清空历史
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 统计信息 -->
+    <div class="col-12 mb-4">
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 id="total-questions" class="text-primary mb-1">0</h3>
+                        <small class="text-muted">总问题数</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 id="processed-questions" class="text-success mb-1">0</h3>
+                        <small class="text-muted">已处理</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 id="rejected-questions" class="text-warning mb-1">0</h3>
+                        <small class="text-muted">已拒绝</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 id="success-rate" class="text-info mb-1">0%</h3>
+                        <small class="text-muted">处理成功率</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 历史记录列表 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="fa fa-history"></i> 处理历史</span>
+                <div>
+                    <button class="btn btn-sm btn-outline-primary" id="refresh-history">
+                        <i class="fa fa-refresh"></i> 刷新
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" id="export-history">
+                        <i class="fa fa-download"></i> 导出
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- 加载状态 -->
+                <div id="loading-indicator" class="text-center py-4" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <span class="ms-2">加载历史记录中...</span>
+                </div>
+                
+                <!-- 空状态 -->
+                <div id="empty-state" class="text-center py-5" style="display: none;">
+                    <i class="fa fa-inbox fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">暂无历史记录</h4>
+                    <p class="text-muted">开始使用技术思维处理器来分析您的问题吧！</p>
+                    <a href="/" class="btn btn-primary">
+                        <i class="fa fa-arrow-left"></i> 返回主页
+                    </a>
+                </div>
+                
+                <!-- 历史记录容器 -->
+                <div id="history-container">
+                    <!-- 历史记录将在这里动态加载 -->
+                </div>
+                
+                <!-- 分页 -->
+                <nav aria-label="历史记录分页" class="mt-4">
+                    <ul class="pagination justify-content-center" id="pagination">
+                        <!-- 分页按钮将在这里动态生成 -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 详情模态框 -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">问题详情</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">原始问题：</label>
+                    <div id="modal-question" class="border rounded p-2 bg-light"></div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">处理状态：</label>
+                    <span id="modal-status" class="badge"></span>
+                    <span id="modal-timestamp" class="text-muted ms-2"></span>
+                </div>
+                
+                <div id="modal-summary-section" class="mb-3">
+                    <label class="form-label fw-bold">思考摘要：</label>
+                    <div id="modal-summary" class="border rounded p-2 bg-light"></div>
+                </div>
+                
+                <div id="modal-keywords-section" class="mb-3">
+                    <label class="form-label fw-bold">关键词：</label>
+                    <div id="modal-keywords"></div>
+                </div>
+                
+                <div id="modal-concepts-section" class="mb-3">
+                    <label class="form-label fw-bold">技术概念：</label>
+                    <div id="modal-concepts"></div>
+                </div>
+                
+                <div id="modal-reason-section" class="mb-3">
+                    <label class="form-label fw-bold">拒绝原因：</label>
+                    <div id="modal-reason" class="text-danger"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-item {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .history-item:hover {
+        background: rgba(255, 255, 255, 1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .status-badge {
+        font-size: 0.8em;
+        padding: 4px 8px;
+        border-radius: 12px;
+    }
+    
+    .status-processed {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .status-rejected {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .status-non_technical {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .question-preview {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 8px;
+        line-height: 1.4;
+    }
+    
+    .question-summary {
+        color: #666;
+        font-size: 0.9em;
+        margin-bottom: 8px;
+        line-height: 1.3;
+    }
+    
+    .question-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8em;
+        color: #999;
+    }
+    
+    .keyword-mini {
+        display: inline-block;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-size: 10px;
+        margin: 1px;
+    }
+    
+    .pagination .page-link {
+        border-radius: 20px !important;
+        margin: 0 2px;
+        border: none;
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+    }
+    
+    .pagination .page-link:hover {
+        background: #667eea;
+        color: white;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background: #667eea;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let currentPage = 1;
+    let itemsPerPage = 10;
+    let allHistory = [];
+    let filteredHistory = [];
+
+    // 初始加载
+    loadHistory();
+
+    // 搜索功能
+    $('#search-input').on('input', debounce(filterHistory, 300));
+    $('#search-btn').click(filterHistory);
+    $('#status-filter, #date-filter').change(filterHistory);
+
+    // 按键搜索
+    $('#search-input').keypress(function(e) {
+        if (e.which === 13) {
+            filterHistory();
+        }
+    });
+
+    // 刷新历史
+    $('#refresh-history').click(loadHistory);
+
+    // 清空历史
+    $('#clear-history').click(function() {
+        if (confirm('确定要清空所有历史记录吗？此操作不可撤销！')) {
+            clearHistory();
+        }
+    });
+
+    // 导出历史
+    $('#export-history').click(exportHistory);
+
+    // 加载历史记录
+    function loadHistory() {
+        showLoading(true);
+
+        $.ajax({
+            url: '/api/get_history',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    allHistory = response.history.reverse(); // 最新的在前
+                    filteredHistory = [...allHistory];
+                    updateStatistics();
+                    renderHistory();
+                } else {
+                    showAlert('error', '加载历史记录失败: ' + response.error);
+                }
+            },
+            error: function() {
+                showAlert('error', '网络错误，无法加载历史记录');
+            },
+            complete: function() {
+                showLoading(false);
+            }
+        });
+    }
+
+    // 过滤历史记录
+    function filterHistory() {
+        const searchTerm = $('#search-input').val().toLowerCase();
+        const statusFilter = $('#status-filter').val();
+        const dateFilter = $('#date-filter').val();
+
+        filteredHistory = allHistory.filter(item => {
+            // 文本搜索
+            const matchesSearch = !searchTerm || 
+                item.question.toLowerCase().includes(searchTerm) ||
+                (item.summary && item.summary.toLowerCase().includes(searchTerm));
+
+            // 状态过滤
+            const matchesStatus = !statusFilter || item.status === statusFilter;
+
+            // 日期过滤
+            const matchesDate = filterByDate(item, dateFilter);
+
+            return matchesSearch && matchesStatus && matchesDate;
+        });
+
+        currentPage = 1;
+        renderHistory();
+    }
+
+    // 日期过滤逻辑
+    function filterByDate(item, dateFilter) {
+        if (!dateFilter) return true;
+
+        const itemDate = new Date(item.timestamp);
+        const now = new Date();
+        
+        switch (dateFilter) {
+            case 'today':
+                return itemDate.toDateString() === now.toDateString();
+            case 'week':
+                const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                return itemDate >= weekAgo;
+            case 'month':
+                const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                return itemDate >= monthAgo;
+            default:
+                return true;
+        }
+    }
+
+    // 渲染历史记录
+    function renderHistory() {
+        const container = $('#history-container');
+        
+        if (filteredHistory.length === 0) {
+            $('#empty-state').show();
+            container.hide();
+            $('#pagination').hide();
+            return;
+        }
+
+        $('#empty-state').hide();
+        container.show();
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const pageItems = filteredHistory.slice(startIndex, endIndex);
+
+        const historyHtml = pageItems.map(item => createHistoryItem(item)).join('');
+        container.html(historyHtml);
+
+        renderPagination();
+
+        // 绑定点击事件
+        $('.history-item').click(function() {
+            const index = $(this).data('index');
+            const item = filteredHistory[index + startIndex];
+            showDetailModal(item);
+        });
+    }
+
+    // 创建历史记录项
+    function createHistoryItem(item, index) {
+        const statusClass = `status-${item.status}`;
+        const statusText = getStatusText(item.status);
+        const summary = item.summary || item.reason || '无详细信息';
+        const timestamp = formatTime(item.timestamp);
+
+        return `
+            <div class="history-item" data-index="${index}">
+                <div class="question-preview">${truncateText(item.question, 100)}</div>
+                <div class="question-summary">${truncateText(summary, 150)}</div>
+                <div class="question-meta">
+                    <div>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                        <span class="text-muted ms-2">${timestamp}</span>
+                    </div>
+                    <div>
+                        <i class="fa fa-eye text-muted"></i>
+                        <span class="text-muted ms-1">点击查看详情</span>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // 渲染分页
+    function renderPagination() {
+        const totalPages = Math.ceil(filteredHistory.length / itemsPerPage);
+        const pagination = $('#pagination');
+
+        if (totalPages <= 1) {
+            pagination.hide();
+            return;
+        }
+
+        pagination.show();
+
+        let paginationHtml = '';
+
+        // 上一页
+        if (currentPage > 1) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="${currentPage - 1}">
+                        <i class="fa fa-chevron-left"></i>
+                    </a>
+                </li>`;
+        }
+
+        // 页码
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+
+        if (startPage > 1) {
+            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+            if (startPage > 2) {
+                paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === currentPage ? 'active' : '';
+            paginationHtml += `
+                <li class="page-item ${activeClass}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>`;
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+        }
+
+        // 下一页
+        if (currentPage < totalPages) {
+            paginationHtml += `
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="${currentPage + 1}">
+                        <i class="fa fa-chevron-right"></i>
+                    </a>
+                </li>`;
+        }
+
+        pagination.html(paginationHtml);
+
+        // 绑定分页事件
+        pagination.find('a.page-link').click(function(e) {
+            e.preventDefault();
+            const page = parseInt($(this).data('page'));
+            if (page && page !== currentPage) {
+                currentPage = page;
+                renderHistory();
+            }
+        });
+    }
+
+    // 更新统计信息
+    function updateStatistics() {
+        const total = allHistory.length;
+        const processed = allHistory.filter(item => item.status === 'processed').length;
+        const rejected = allHistory.filter(item => item.status === 'rejected' || item.status === 'non_technical').length;
+        const successRate = total > 0 ? Math.round((processed / total) * 100) : 0;
+
+        $('#total-questions').text(total);
+        $('#processed-questions').text(processed);
+        $('#rejected-questions').text(rejected);
+        $('#success-rate').text(successRate + '%');
+    }
+
+    // 显示详情模态框
+    function showDetailModal(item) {
+        $('#modal-question').text(item.question);
+        $('#modal-timestamp').text(formatTime(item.timestamp));
+        
+        // 状态
+        const statusClass = `badge bg-${getStatusColor(item.status)}`;
+        $('#modal-status').attr('class', statusClass).text(getStatusText(item.status));
+
+        // 根据状态显示不同内容
+        if (item.status === 'processed') {
+            $('#modal-summary-section').show();
+            $('#modal-summary').text(item.summary || '无摘要');
+            
+            $('#modal-keywords-section, #modal-concepts-section').show();
+            $('#modal-reason-section').hide();
+        } else {
+            $('#modal-summary-section, #modal-keywords-section, #modal-concepts-section').hide();
+            $('#modal-reason-section').show();
+            $('#modal-reason').text(item.reason || '非技术问题');
+        }
+
+        $('#detailModal').modal('show');
+    }
+
+    // 清空历史
+    function clearHistory() {
+        $.ajax({
+            url: '/api/reset_processor',
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    allHistory = [];
+                    filteredHistory = [];
+                    updateStatistics();
+                    renderHistory();
+                    showAlert('success', '历史记录已清空！');
+                } else {
+                    showAlert('error', '清空失败: ' + response.error);
+                }
+            },
+            error: function() {
+                showAlert('error', '网络错误，请重试');
+            }
+        });
+    }
+
+    // 导出历史
+    function exportHistory() {
+        if (allHistory.length === 0) {
+            showAlert('warning', '没有可导出的数据');
+            return;
+        }
+
+        const csvContent = [
+            ['时间', '问题', '状态', '摘要/原因'].join(','),
+            ...allHistory.map(item => [
+                formatTime(item.timestamp),
+                `"${item.question.replace(/"/g, '""')}"`,
+                getStatusText(item.status),
+                `"${(item.summary || item.reason || '').replace(/"/g, '""')}"`
+            ].join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `tech_thoughts_history_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        
+        showAlert('success', '历史记录导出成功！');
+    }
+
+    // 工具函数
+    function showLoading(show) {
+        if (show) {
+            $('#loading-indicator').show();
+            $('#history-container, #empty-state').hide();
+        } else {
+            $('#loading-indicator').hide();
+        }
+    }
+
+    function getStatusText(status) {
+        const statusMap = {
+            'processed': '已处理',
+            'rejected': '已拒绝',
+            'non_technical': '非技术'
+        };
+        return statusMap[status] || '未知';
+    }
+
+    function getStatusColor(status) {
+        const colorMap = {
+            'processed': 'success',
+            'rejected': 'danger',
+            'non_technical': 'warning'
+        };
+        return colorMap[status] || 'secondary';
+    }
+
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleString('zh-CN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function truncateText(text, maxLength) {
+        if (text.length <= maxLength) return text;
+        return text.substr(0, maxLength) + '...';
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    function showAlert(type, message) {
+        const alertClass = type === 'error' ? 'alert-danger' : 
+                          type === 'warning' ? 'alert-warning' :
+                          type === 'info' ? 'alert-info' : 'alert-success';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-custom alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        
+        $('.container').prepend(alertHtml);
+        
+        setTimeout(() => {
+            $('.alert').alert('close');
+        }, 3000);
+    }
+});
+</script>
+{% endblock %}

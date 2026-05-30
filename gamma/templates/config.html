@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}配置设置 - 技术思维处理器{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fa fa-cog"></i> 处理器配置
+            </div>
+            <div class="card-body">
+                <form id="config-form">
+                    <!-- API配置 -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary mb-3">
+                                <i class="fa fa-key"></i> API 配置
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <div class="alert alert-info">
+                                    <i class="fa fa-info-circle me-2"></i>
+                                    <strong>API配置：</strong>系统已自动配置API密钥，无需手动输入。
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 处理器参数 -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-success mb-3">
+                                <i class="fa fa-sliders"></i> 处理器参数
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="call-interval" class="form-label">API调用间隔 (秒)</label>
+                                    <input type="range" class="form-range" id="call-interval" 
+                                           min="0.5" max="5" step="0.1" value="1.5">
+                                    <div class="d-flex justify-content-between">
+                                        <small>0.5s</small>
+                                        <small id="interval-value">1.5s</small>
+                                        <small>5s</small>
+                                    </div>
+                                    <div class="form-text">控制API调用频率，避免过于频繁的请求。</div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="context-limit" class="form-label">上下文窗口大小</label>
+                                    <select class="form-select" id="context-limit">
+                                        <option value="3">3 条历史记录</option>
+                                        <option value="5" selected>5 条历史记录 (推荐)</option>
+                                        <option value="8">8 条历史记录</option>
+                                        <option value="10">10 条历史记录</option>
+                                    </select>
+                                    <div class="form-text">保留的历史思考记录数量，用于上下文理解。</div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="partial-interval" class="form-label">部分思考间隔 (秒)</label>
+                                    <input type="range" class="form-range" id="partial-interval" 
+                                           min="0.3" max="2" step="0.1" value="0.8">
+                                    <div class="d-flex justify-content-between">
+                                        <small>0.3s</small>
+                                        <small id="partial-value">0.8s</small>
+                                        <small>2s</small>
+                                    </div>
+                                    <div class="form-text">实时思考更新的触发间隔。</div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="context-expiry" class="form-label">上下文有效期 (分钟)</label>
+                                    <select class="form-select" id="context-expiry">
+                                        <option value="2">2 分钟</option>
+                                        <option value="5" selected>5 分钟 (推荐)</option>
+                                        <option value="10">10 分钟</option>
+                                        <option value="30">30 分钟</option>
+                                    </select>
+                                    <div class="form-text">历史上下文的过期时间。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 高级设置 -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-warning mb-3">
+                                <i class="fa fa-wrench"></i> 高级设置
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="enable-realtime" checked>
+                                        <label class="form-check-label" for="enable-realtime">
+                                            启用实时分析
+                                        </label>
+                                    </div>
+                                    <div class="form-text">开启后会实时分析输入文本。</div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="enable-filtering" checked>
+                                        <label class="form-check-label" for="enable-filtering">
+                                            启用技术过滤
+                                        </label>
+                                    </div>
+                                    <div class="form-text">自动过滤非技术问题。</div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="log-level" class="form-label">日志级别</label>
+                                <select class="form-select" id="log-level">
+                                    <option value="DEBUG">DEBUG (详细)</option>
+                                    <option value="INFO" selected>INFO (标准)</option>
+                                    <option value="WARNING">WARNING (警告)</option>
+                                    <option value="ERROR">ERROR (仅错误)</option>
+                                </select>
+                                <div class="form-text">控制系统日志的详细程度。</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-save"></i> 保存并启动
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" id="test-connection">
+                            <i class="fa fa-plug"></i> 测试连接
+                        </button>
+                        <button type="button" class="btn btn-outline-info" id="load-defaults">
+                            <i class="fa fa-refresh"></i> 恢复默认
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" id="reset-all">
+                            <i class="fa fa-trash"></i> 重置所有
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 状态信息卡片 -->
+<div class="row mt-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="fa fa-info-circle"></i> 当前状态
+            </div>
+            <div class="card-body">
+                <div id="current-status">
+                    <p class="mb-1"><strong>处理器状态：</strong> <span id="processor-status" class="text-muted">未初始化</span></p>
+                    <p class="mb-1"><strong>API模型：</strong> <span id="current-model" class="text-muted">未设置</span></p>
+                    <p class="mb-1"><strong>已处理：</strong> <span id="processed-count" class="text-muted">0</span> 个问题</p>
+                    <p class="mb-0"><strong>队列状态：</strong> <span id="queue-status" class="text-muted">空闲</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-warning text-white">
+                <i class="fa fa-exclamation-triangle"></i> 重要提示
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>请妥善保管您的API密钥，不要泄露给他人</li>
+                    <li>API调用会产生费用，请合理设置调用间隔</li>
+                    <li>当前使用Qwen Flash模型进行技术分析</li>
+                    <li>首次使用请先测试连接确保配置正确</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-range {
+        cursor: pointer;
+    }
+    
+    .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    .card-header.bg-info {
+        background: linear-gradient(45deg, #17a2b8, #20c997) !important;
+    }
+    
+    .card-header.bg-warning {
+        background: linear-gradient(45deg, #ffc107, #fd7e14) !important;
+        color: #000 !important;
+    }
+    
+    .optgroup-header {
+        font-weight: bold;
+        color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let processorInitialized = false;
+
+    // 加载保存的配置
+    loadSavedConfig();
+
+    // 滑块值实时更新
+    $('#call-interval').on('input', function() {
+        $('#interval-value').text($(this).val() + 's');
+    });
+
+    $('#partial-interval').on('input', function() {
+        $('#partial-value').text($(this).val() + 's');
+    });
+
+    // 配置表单提交
+    $('#config-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        const config = getFormConfig();
+
+        const $btn = $(this).find('button[type="submit"]');
+        $btn.prop('disabled', true).html('<div class="loading-spinner"></div>启动中...');
+
+        $.ajax({
+            url: '/api/init_processor',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(config),
+            success: function(response) {
+                if (response.success) {
+                    processorInitialized = true;
+                    updateStatus();
+                    saveConfig(config);
+                    showAlert('success', '处理器已启动！');
+                } else {
+                    showAlert('error', '启动失败: ' + response.error);
+                }
+            },
+            error: function() {
+                showAlert('error', '网络错误，请重试');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="fa fa-save"></i> 保存并启动');
+            }
+        });
+    });
+
+    // 测试连接
+    $('#test-connection').click(function() {
+        const config = getFormConfig();
+
+        const $btn = $(this);
+        $btn.prop('disabled', true).html('<div class="loading-spinner"></div>测试中...');
+
+        $.ajax({
+            url: '/api/init_processor',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(config),
+            success: function(response) {
+                if (response.success) {
+                    showAlert('success', '连接测试成功！处理器已就绪。');
+                } else {
+                    showAlert('error', '连接测试失败: ' + response.error);
+                }
+            },
+            error: function() {
+                showAlert('error', '网络错误，无法连接到服务器');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="fa fa-plug"></i> 测试连接');
+            }
+        });
+    });
+
+    // 恢复默认设置
+    $('#load-defaults').click(function() {
+        if (confirm('确定要恢复默认设置吗？')) {
+            loadDefaultConfig();
+            showAlert('info', '默认设置已加载');
+        }
+    });
+
+    // 重置所有
+    $('#reset-all').click(function() {
+        if (confirm('确定要重置所有设置和数据吗？此操作不可撤销！')) {
+            resetAllData();
+        }
+    });
+
+    // 获取表单配置
+    function getFormConfig() {
+        return {
+            // API密钥和模型已在后端固定配置，无需传递
+            call_interval: parseFloat($('#call-interval').val()),
+            context_limit: parseInt($('#context-limit').val()),
+            partial_interval: parseFloat($('#partial-interval').val()),
+            context_expiry: parseInt($('#context-expiry').val()) * 60, // 转换为秒
+            enable_realtime: $('#enable-realtime').is(':checked'),
+            enable_filtering: $('#enable-filtering').is(':checked'),
+            log_level: $('#log-level').val()
+        };
+    }
+
+    // 加载默认配置
+    function loadDefaultConfig() {
+        $('#call-interval').val(1.5).trigger('input');
+        $('#context-limit').val(5);
+        $('#partial-interval').val(0.8).trigger('input');
+        $('#context-expiry').val(5);
+        $('#enable-realtime').prop('checked', true);
+        $('#enable-filtering').prop('checked', true);
+        $('#log-level').val('INFO');
+    }
+
+    // 保存配置到本地存储
+    function saveConfig(config) {
+        // 不保存敏感信息如API密钥
+        const safeConfig = { ...config };
+        delete safeConfig.api_key;
+        localStorage.setItem('processorConfig', JSON.stringify(safeConfig));
+    }
+
+    // 加载保存的配置
+    function loadSavedConfig() {
+        const saved = localStorage.getItem('processorConfig');
+        if (saved) {
+            try {
+                const config = JSON.parse(saved);
+                $('#call-interval').val(config.call_interval || 1.5).trigger('input');
+                $('#context-limit').val(config.context_limit || 5);
+                $('#partial-interval').val(config.partial_interval || 0.8).trigger('input');
+                $('#context-expiry').val((config.context_expiry || 300) / 60);
+                $('#enable-realtime').prop('checked', config.enable_realtime !== false);
+                $('#enable-filtering').prop('checked', config.enable_filtering !== false);
+                $('#log-level').val(config.log_level || 'INFO');
+            } catch (e) {
+                console.error('加载配置失败:', e);
+                loadDefaultConfig();
+            }
+        } else {
+            loadDefaultConfig();
+        }
+    }
+
+    // 更新状态显示
+    function updateStatus() {
+        $.ajax({
+            url: '/api/get_processor_status',
+            method: 'GET',
+            success: function(response) {
+                if (response.success) {
+                    const status = response.status;
+                    $('#processor-status').text(status.status === 'active' ? '运行中' : '未初始化')
+                        .removeClass().addClass(status.status === 'active' ? 'text-success' : 'text-muted');
+                    $('#current-model').text('Qwen Flash');
+                    $('#processed-count').text(status.processed_count || 0);
+                    $('#queue-status').text(status.queue_size > 0 ? `${status.queue_size} 个任务等待` : '空闲')
+                        .removeClass().addClass(status.queue_size > 0 ? 'text-warning' : 'text-success');
+                }
+            }
+        });
+    }
+
+    // 重置所有数据
+    function resetAllData() {
+        const $btn = $('#reset-all');
+        $btn.prop('disabled', true).html('<div class="loading-spinner"></div>重置中...');
+
+        $.ajax({
+            url: '/api/reset_processor',
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    localStorage.removeItem('processorConfig');
+                    loadDefaultConfig();
+                    processorInitialized = false;
+                    updateStatus();
+                    showAlert('success', '所有数据已重置！');
+                } else {
+                    showAlert('error', '重置失败: ' + response.error);
+                }
+            },
+            error: function() {
+                showAlert('error', '网络错误，请重试');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="fa fa-trash"></i> 重置所有');
+            }
+        });
+    }
+
+    // 显示提示信息
+    function showAlert(type, message) {
+        const alertClass = type === 'error' ? 'alert-danger' : 
+                          type === 'info' ? 'alert-info' : 'alert-success';
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-custom alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        
+        $('.container').prepend(alertHtml);
+        
+        // 3秒后自动消失
+        setTimeout(() => {
+            $('.alert').alert('close');
+        }, 3000);
+    }
+
+    // 定期更新状态
+    setInterval(updateStatus, 5000);
+    
+    // 初始状态更新
+    updateStatus();
+});
+</script>
+{% endblock %}
