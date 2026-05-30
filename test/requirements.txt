@@ -1,0 +1,9 @@
+# 桌面自动化助手依赖
+openai>=1.0.0
+pyautogui>=0.9.54
+pyperclip>=1.8.2
+# 统一输入行：长按 v 语音、松手停止，需监听按键
+pynput>=1.7.0
+# 语音：通义实时 ASR
+dashscope>=1.25.6
+pyaudio>=0.2.11
