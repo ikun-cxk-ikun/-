@@ -3,7 +3,7 @@ import requests
 import speech_recognition as sr
 
 # API密钥和URL（你需要提供你的API密钥）
-API_KEY = "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"
+API_KEY = ""
 API_URL = "https://api.openai.com/v1/chat/completions"
 
 # 设置请求头
