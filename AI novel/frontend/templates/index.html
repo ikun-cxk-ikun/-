@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>红楼梦知识问答</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>红楼梦·知梦阁</h1>
+            <div class="decorative-border"></div>
+        </div>
+        
+        <div class="qa-container">
+            <div class="input-section">
+                <textarea id="question-input" placeholder="请输入您关于红楼梦的疑问..."></textarea>
+                <button onclick="askQuestion()">问梦</button>
+            </div>
+            
+            <div class="result-section">
+                <div class="loading" id="loading">
+                    <div class="ink-spread"></div>
+                    <p>正在解析梦中真意...</p>
+                </div>
+                <div id="answer-container"></div>
+                <div id="sources-container"></div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>—— 满纸荒唐言，一把辛酸泪 ——</p>
+        </div>
+    </div>
+
+    <script>
+        async function askQuestion() {
+            const question = document.getElementById('question-input').value;
+            const answerContainer = document.getElementById('answer-container');
+            const sourcesContainer = document.getElementById('sources-container');
+            const loading = document.getElementById('loading');
+
+            if (!question) return;
+
+            loading.style.display = 'flex';
+            answerContainer.innerHTML = '';
+            sourcesContainer.innerHTML = '';
+
+            try {
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({question})
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    answerContainer.innerHTML = `<div class="error">${data.error}</div>`;
+                    return;
+                }
+
+                answerContainer.innerHTML = `
+                    <div class="answer">
+                        <div class="lotus-icon"></div>
+                        <p>${data.answer}</p>
+                    </div>
+                `;
+
+                if (data.sources && data.sources.length) {
+                    sourcesContainer.innerHTML = `
+                        <h3>相关原文摘录：</h3>
+                        ${data.sources.map(text => `
+                            <div class="source-item">
+                                <div class="quote-mark">“</div>
+                                <p>${text}</p>
+                            </div>
+                        `).join('')}
+                    `;
+                }
+            } catch (error) {
+                answerContainer.innerHTML = `<div class="error">问答系统暂时不可用</div>`;
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

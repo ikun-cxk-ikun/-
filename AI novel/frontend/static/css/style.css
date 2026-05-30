@@ -1,0 +1,149 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Ma Shan Zheng', cursive;
+}
+
+body {
+    background: #f5eee6 url('/static/images/bg-texture.png');
+    color: #4a2c2a;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    color: #9a2515;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
+
+.decorative-border {
+    height: 4px;
+    background: linear-gradient(90deg, #9a2515 0%, #e6c8a6 50%, #9a2515 100%);
+    margin: 1rem 0;
+}
+
+.qa-container {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.input-section {
+    margin-bottom: 2rem;
+}
+
+textarea {
+    width: 100%;
+    height: 100px;
+    padding: 1rem;
+    border: 2px solid #e6c8a6;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    resize: vertical;
+    background: #fffaf5;
+}
+
+button {
+    background: #9a2515;
+    color: white;
+    border: none;
+    padding: 0.8rem 2rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+    transition: all 0.3s;
+}
+
+button:hover {
+    background: #7a1d10;
+    transform: translateY(-2px);
+}
+
+.result-section {
+    margin-top: 2rem;
+}
+
+.answer {
+    background: #f8f1e6;
+    padding: 1.5rem;
+    border-left: 4px solid #9a2515;
+    border-radius: 5px;
+    position: relative;
+}
+
+.lotus-icon {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: url('/static/images/lotus.png') no-repeat center/contain;
+    top: -15px;
+    left: -15px;
+}
+
+.source-item {
+    background: #f8f1e6;
+    margin: 1rem 0;
+    padding: 1rem;
+    border-radius: 5px;
+    position: relative;
+}
+
+.quote-mark {
+    position: absolute;
+    font-size: 3rem;
+    color: #9a2515;
+    opacity: 0.3;
+    top: -10px;
+    left: 5px;
+}
+
+.loading {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+}
+
+.ink-spread {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #9a2515;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.8); opacity: 0.5; }
+    50% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(0.8); opacity: 0.5; }
+}
+
+.footer {
+    text-align: center;
+    margin-top: 2rem;
+    color: #9a2515;
+    opacity: 0.8;
+}
+
+.error {
+    color: #c7254e;
+    background: #f8d7da;
+    padding: 1rem;
+    border-radius: 5px;
+    margin: 1rem 0;
+}
