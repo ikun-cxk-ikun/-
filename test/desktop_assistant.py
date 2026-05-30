@@ -53,7 +53,7 @@ _CONVERSATION_HISTORY: List[Tuple[str, str]] = []  # [(用户任务, 执行结�
 
 # ==================== 配置区 ====================
 # browser-use 使用的阿里云 LLM
-BROWSER_LLM_API_KEY = os.getenv("ALIBABA_CLOUD", "sk-05b1e4b662b44e0aa6666e970b5f51f4")
+BROWSER_LLM_API_KEY = os.getenv("ALIBABA_CLOUD", "")
 BROWSER_LLM_BASE_URL = os.getenv("ALIBABA_CLOUD_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
 # 推荐用通义千问视觉模型，支持网页截图理解
 BROWSER_LLM_MODEL = os.getenv("BROWSER_LLM_MODEL", "qwen3-omni-flash-2025-12-01")
